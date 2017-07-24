@@ -1,7 +1,7 @@
 FROM alpine:latest
 MAINTAINER fzerorubigd<fzero@rubi.gd>
 
-ADD /entrypoit.sh /entrypoint
+ADD entrypoint.sh /entrypoint
 
 RUN apk update \
     && apk add alpine-sdk autoconf automake curl gcc git libmnl-dev make \
