@@ -1,6 +1,7 @@
 FROM alpine:latest
 MAINTAINER fzerorubigd<fzero@rubi.gd>
 
+ADD /entrypoit.sh /entrypoint
 
 RUN apk update \
     && apk add alpine-sdk autoconf automake curl gcc git libmnl-dev make \
@@ -15,4 +16,10 @@ RUN apk update \
     && apk del alpine-sdk autoconf automake gcc make pkgconfig go \
     && ln -sf /dev/stdout /var/log/netdata/access.log \
     && ln -sf /dev/stdout /var/log/netdata/debug.log \
-    && ln -sf /dev/stderr /var/log/netdata/error.log
+    && ln -sf /dev/stderr /var/log/netdata/error.log \
+    && chmod a+x /entrypoint
+
+ENTRYPOINT ["/entrypoint"]
+
+
+
