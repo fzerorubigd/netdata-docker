@@ -16,6 +16,7 @@ RUN apk update \
     && GOPATH=/tmp GOBIN=/bin go get github.com/fzerorubigd/iniset \
     && rm -rf /tmp/* \
     && apk del alpine-sdk autoconf automake gcc make pkgconfig go \
+            pkgconf zlib-dev util-linux-dev libmnl-dev g++ build-base git \
     && ln -sf /dev/stdout /var/log/netdata/access.log \
     && ln -sf /dev/stdout /var/log/netdata/debug.log \
     && ln -sf /dev/stderr /var/log/netdata/error.log \
