@@ -1,28 +1,25 @@
-FROM alpine:latest
+FROM ubuntu:latest
 MAINTAINER fzerorubigd<fzero@rubi.gd>
 
-ADD entrypoint.sh /entrypoint
+COPY entrypoint.sh /entrypoint.sh
 
-RUN apk update \
-    && apk add alpine-sdk autoconf automake curl gcc git libmnl-dev make \
-            netcat-openbsd pkgconfig py-yaml python util-linux-dev zlib-dev \
-            bash go py-mysqldb build-base libuuid \
-    && addgroup -g 1000 netdata \
-    && adduser -D -H -u 1000 -G netdata netdata \
-    && git clone https://github.com/firehol/netdata.git /netdata.git \
-    && cd /netdata.git \
-    && ./netdata-installer.sh --dont-wait --dont-start-it \
-    && cd / && rm -rf /netdata.git \
-    && GOPATH=/tmp GOBIN=/bin go get github.com/fzerorubigd/iniset \
-    && rm -rf /tmp/* \
-    && apk del alpine-sdk autoconf automake gcc make pkgconfig go \
-            pkgconf zlib-dev util-linux-dev libmnl-dev g++ build-base git \
-    && ln -sf /dev/stdout /var/log/netdata/access.log \
-    && ln -sf /dev/stdout /var/log/netdata/debug.log \
-    && ln -sf /dev/stderr /var/log/netdata/error.log \
-    && chmod a+x /entrypoint
+RUN apt-get update && \
+    apt-get --yes install git wget curl autoconf autoconf-archive autogen automake golang bash \
+    gcc libmnl-dev make netcat pkg-config python python-yaml uuid-dev zlib1g-dev sendmail python-mysqldb && \
+    addgroup --gid 1000 netdata && \
+    adduser --system --disabled-password --no-create-home --uid 1000 netdata && \
+    git clone https://github.com/firehol/netdata.git /netdata.git && \
+    cd /netdata.git && \
+    ./netdata-installer.sh --dont-wait --dont-start-it && \
+    cd / && rm -rf /netdata.git && \
+    GOPATH=/tmp GOBIN=/bin go get github.com/fzerorubigd/iniset && \
+    rm -rf /tmp/* && \
+    ln -sf /dev/stdout /var/log/netdata/access.log && \
+    ln -sf /dev/stdout /var/log/netdata/debug.log && \
+    ln -sf /dev/stderr /var/log/netdata/error.log && \
+    chmod a+x /entrypoint.sh && \
+    chown netdata:netdata -R /etc/netdata
 
 USER netdata
 
-ENTRYPOINT ["/entrypoint"]
-
+ENTRYPOINT ["/entrypoint.sh"]
