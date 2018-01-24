@@ -22,4 +22,4 @@ RUN apt-get update && \
 
 USER netdata
 
-ENTRYPOINT ["/entrypoint.sh"]
+ENTRYPOINT ["bash","-x","/entrypoint.sh"]
