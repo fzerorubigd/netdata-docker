@@ -8,24 +8,40 @@ set -exo pipefail
 # Fix permissions:
 chown netdata:netdata /usr/share/netdata/web/ -R
 
+# Remove health.d and python.d directories and copy new files:
+rm -r /etc/netdata/health.d
+rm -r /etc/netdata/python.d
+cp -r /netdata/{health,python}.d /etc/netdata/
+chown -R netdata:netdata /etc/netdata
+
 echo -n "" > /usr/share/netdata/web/version.txt
 
 # Insert configs from ENV to /etc/netdata/health_alarm_notify.conf
 # This ENVs should be start with "ENV_" prifix
 # For example: ENV_SEND_SLACK="YES"
+env
 for EACH_ENV in $(env | grep "^ENV"); do
-    ENV_VAR=$(echo ${EACH_ENV} | cut -d"_" -f2- | cut -d"=" -f1)
-    ENV_NEW_VALUE=$(echo ${EACH_ENV} | cut -d'=' -f2- | sed "s/\"//g")
-    COMMAND_OUTPUT=$(grep "^${ENV_VAR}" /etc/netdata/health_alarm_notify.conf | head --lines=1)
-    RETURN_CODE=$(echo $?)
+    NEW_ENV=$(echo ${EACH_ENV} | cut -d"=" -f2-)
+    ENV_FILE=$(echo ${NEW_ENV} | cut -d"+" -f1)
+    ENV_VAR=$(echo ${NEW_ENV} | cut -d"+" -f2)
+    ENV_VAL=$(echo ${NEW_ENV} | cut -d"+" -f3)
+    ENV_DEL=$(echo ${NEW_ENV} | cut -d"+" -f4)
+    OLD_ENV=$(grep "${ENV_VAR}" ${ENV_FILE} | grep -v "^#")
+    OLD_ENV=$(echo "${OLD_ENV}" | head -n 1)
+    RETURN_CODE=${?}
     if [[ ${RETURN_CODE} == 0 ]]; then
-        ENV_OLD_VALUE=$(echo $COMMAND_OUTPUT | cut -d"=" -f2- | sed "s/\"//g")
-        if [[ "${ENV_NEW_VALUE}" != "${END_OLD_VALUE}" ]]; then
-            NEW_ENV_VAR="${ENV_VAR}=\"${ENV_NEW_VALUE}\""
-            sed -i -e "s,${COMMAND_OUTPUT},${NEW_ENV_VAR},g" /etc/netdata/health_alarm_notify.conf
+        OLD_VAL=$(echo "${OLD_ENV}" | cut -d"${ENV_DEL}" -f2 | sed "s/\"//g" | sed "s/\'//g")
+        if [[ ${OLD_VAL} != ${ENV_VAL} ]]; then
+            if [[ ${ENV_DEL} == "=" ]]; then
+                NEW_LINE=$(echo "${ENV_VAR}${ENV_DEL}\"${ENV_VAL}\"")
+            elif [[ ${ENV_DEL} == ":" ]]; then
+                NEW_LINE=$(echo "${ENV_VAR}${ENV_DEL} \'${ENV_VAL}\'")
+            fi
+            sed -i -e "s,${OLD_ENV},${NEW_LINE},g" ${ENV_FILE}
         fi
     else
-        echo "${ENV_VAR}=\"${ENV_NEW_VALUE}\"" >> /etc/netdata/health_alarm_notify.conf
+        NEW_LINE=$(echo "${ENV_VAR}${ENV_DEL}\"${ENV_VAL}\"")
+        echo "${NEW_LINE}" >> ${ENV_FILE}
     fi
 done
 
